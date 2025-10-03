@@ -187,10 +187,10 @@ if (questionForm) {
     }
 
     // ✅ Проверка вопроса
-    if (!data.question || data.question.trim() === '') {
-      alert('Пожалуйста, напишите ваш вопрос');
-      return;
-    }
+    // if (!data.question || data.question.trim() === '') {
+    //   alert('Пожалуйста, напишите ваш вопрос');
+    //   return;
+    // }
 
     isQuestionSubmitting = true;
     questionSubmitBtn.textContent = 'Отправляем...';
