@@ -1,4 +1,34 @@
 // ==================================================
+// ФУНКЦИЯ ВАЛИДАЦИИ КОНТАКТА (Email или Telegram)
+// ==================================================
+function validateContact(contact) {
+  if (!contact || contact.trim() === '') {
+    return { valid: false, message: 'Поле контакта не может быть пустым' };
+  }
+
+  contact = contact.trim();
+
+  // Проверка Email
+  const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  
+  // Проверка Telegram (@username, минимум 5 символов, только латиница, цифры и подчеркивания)
+  const telegramRegex = /^@[a-zA-Z0-9_]{4,}$/;
+
+  if (emailRegex.test(contact)) {
+    return { valid: true, type: 'email' };
+  }
+  
+  if (telegramRegex.test(contact)) {
+    return { valid: true, type: 'telegram' };
+  }
+
+  return { 
+    valid: false, 
+    message: 'Введите корректный email (example@mail.com) или Telegram (@username)' 
+  };
+}
+
+// ==================================================
 // ОСНОВНАЯ ФОРМА ЗАЯВКИ (на бесплатное занятие)
 // Отправка через Make.com Webhook
 // ==================================================
@@ -6,37 +36,49 @@ const contactForm = document.getElementById('contact-form');
 const submitBtn = document.getElementById('submit-btn');
 const thanksDiv = document.getElementById('thanks');
 
-function isValidContact(contact) {
-  const tgRegex = /^@[a-zA-Z0-9_]{5,32}$/;
-  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-  return tgRegex.test(contact) || emailRegex.test(contact);
-}
-
+// ✅ Защита от двойной отправки
+let isSubmitting = false;
 
 if (contactForm) {
   contactForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    // Блокируем кнопку и меняем текст
-    submitBtn.textContent = 'Отправляем...';
-    submitBtn.disabled = true;
+    // ✅ Защита от повторной отправки
+    if (isSubmitting) {
+      console.warn('Форма уже отправляется');
+      return;
+    }
 
     // Собираем данные формы в объект
     const formData = new FormData(contactForm);
     const data = Object.fromEntries(formData.entries());
 
-    if (!isValidContact(data.contact)) {
-      alert('Пожалуйста, укажите корректный контакт: либо @username в Telegram, либо email.');
-      resetSubmitButton();
-      return; // прерываем отправку
+    // ✅ ВАЛИДАЦИЯ ПОЛЯ КОНТАКТА
+    const contactField = data.contact || data.email || data.telegram; // укажи правильное имя поля
+    const validation = validateContact(contactField);
+
+    if (!validation.valid) {
+      alert(validation.message);
+      return;
     }
+
+    // ✅ Дополнительные проверки (опционально)
+    if (!data.name || data.name.trim() === '') {
+      alert('Пожалуйста, укажите ваше имя');
+      return;
+    }
+
+    // Блокируем кнопку и меняем текст
+    isSubmitting = true;
+    submitBtn.textContent = 'Отправляем...';
+    submitBtn.disabled = true;
 
     // Добавляем тип заявки и дату
     data.formType = 'main_application';
     data.timestamp = new Date().toLocaleString('ru-RU');
+    data.contactType = validation.type; // ✅ помечаем тип контакта (email/telegram)
 
     try {
-      // ⚠️ ЗАМЕНИ ЭТОТ URL НА СВОЙ MAKE.COM WEBHOOK
       const response = await fetch('https://hook.us2.make.com/s7mkw9t9e2s6rnj632smmhq5417ib06x', {
         method: 'POST',
         headers: {
@@ -67,12 +109,15 @@ if (contactForm) {
       console.error('Ошибка сети:', error);
       alert('Ошибка сети. Проверьте подключение к интернету.');
       resetSubmitButton();
+    } finally {
+      isSubmitting = false; // ✅ разблокируем в любом случае
     }
   });
 
   function resetSubmitButton() {
     submitBtn.textContent = 'Записаться на бесплатное занятие →';
     submitBtn.disabled = false;
+    isSubmitting = false;
   }
 }
 
@@ -85,17 +130,20 @@ const askBtn = document.getElementById('ask-question');
 const closeBtn = document.getElementById('close-modal');
 const questionForm = document.getElementById('question-form');
 
+// ✅ Защита от двойной отправки для модалки
+let isQuestionSubmitting = false;
+
 if (askBtn) {
   askBtn.addEventListener('click', () => {
     modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden'; // запрещаем скролл при открытом модальном окне
+    document.body.style.overflow = 'hidden';
   });
 }
 
 if (closeBtn) {
   closeBtn.addEventListener('click', () => {
     modal.style.display = 'none';
-    document.body.style.overflow = ''; // разрешаем скролл
+    document.body.style.overflow = '';
   });
 }
 
@@ -114,18 +162,46 @@ if (questionForm) {
   questionForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    questionSubmitBtn.textContent = 'Отправляем...';
-    questionSubmitBtn.disabled = true;
+    // ✅ Защита от повторной отправки
+    if (isQuestionSubmitting) {
+      console.warn('Вопрос уже отправляется');
+      return;
+    }
 
     const formData = new FormData(questionForm);
     const data = Object.fromEntries(formData.entries());
 
+    // ✅ ВАЛИДАЦИЯ ПОЛЯ КОНТАКТА
+    const contactField = data.contact || data.email || data.telegram; // укажи правильное имя поля
+    const validation = validateContact(contactField);
+
+    if (!validation.valid) {
+      alert(validation.message);
+      return;
+    }
+
+    // ✅ Проверка имени (опционально)
+    if (!data.name || data.name.trim() === '') {
+      alert('Пожалуйста, укажите ваше имя');
+      return;
+    }
+
+    // ✅ Проверка вопроса
+    if (!data.question || data.question.trim() === '') {
+      alert('Пожалуйста, напишите ваш вопрос');
+      return;
+    }
+
+    isQuestionSubmitting = true;
+    questionSubmitBtn.textContent = 'Отправляем...';
+    questionSubmitBtn.disabled = true;
+
     // Добавляем тип и дату
     data.formType = 'question';
     data.timestamp = new Date().toLocaleString('ru-RU');
+    data.contactType = validation.type; // ✅ помечаем тип контакта
 
     try {
-      // ⚠️ ТОТ ЖЕ MAKE.COM WEBHOOK
       const response = await fetch('https://hook.us2.make.com/s7mkw9t9e2s6rnj632smmhq5417ib06x', {
         method: 'POST',
         headers: {
@@ -145,10 +221,11 @@ if (questionForm) {
     } catch (error) {
       console.error('Ошибка сети:', error);
       alert('Ошибка сети. Попробуйте позже.');
+    } finally {
+      questionSubmitBtn.textContent = 'Отправить вопрос';
+      questionSubmitBtn.disabled = false;
+      isQuestionSubmitting = false; // ✅ разблокируем
     }
-
-    questionSubmitBtn.textContent = 'Отправить вопрос';
-    questionSubmitBtn.disabled = false;
   });
 }
 
@@ -164,7 +241,7 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     const targetElement = document.querySelector(targetId);
     if (targetElement) {
       window.scrollTo({
-        top: targetElement.offsetTop - 80, // смещение под шапку
+        top: targetElement.offsetTop - 80,
         behavior: 'smooth'
       });
     }
@@ -188,7 +265,6 @@ const animateOnScroll = () => {
   });
 };
 
-// Добавляем начальные стили для анимации
 document.querySelectorAll('section h2, .features-grid, .courses-grid, .testimonials-grid, .steps-container').forEach(el => {
   el.style.opacity = '0';
   el.style.transform = 'translateY(30px)';
@@ -196,7 +272,7 @@ document.querySelectorAll('section h2, .features-grid, .courses-grid, .testimoni
 });
 
 window.addEventListener('scroll', animateOnScroll);
-window.addEventListener('load', animateOnScroll); // на случай, если элементы уже в зоне видимости
+window.addEventListener('load', animateOnScroll);
 
 // ==================================================
 // UTM-метки (автосбор из URL)
@@ -212,14 +288,5 @@ function setUTM() {
     }
   });
 }
-
-// Добавь эти поля в обе формы (основную и модальную), если хочешь собирать UTM:
-/*
-<input type="hidden" name="utm_source">
-<input type="hidden" name="utm_medium">
-<input type="hidden" name="utm_campaign">
-<input type="hidden" name="utm_term">
-<input type="hidden" name="utm_content">
-*/
 
 setUTM();
