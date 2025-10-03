@@ -6,6 +6,13 @@ const contactForm = document.getElementById('contact-form');
 const submitBtn = document.getElementById('submit-btn');
 const thanksDiv = document.getElementById('thanks');
 
+function isValidContact(contact) {
+  const tgRegex = /^@[a-zA-Z0-9_]{5,32}$/;
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return tgRegex.test(contact) || emailRegex.test(contact);
+}
+
+
 if (contactForm) {
   contactForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -17,6 +24,12 @@ if (contactForm) {
     // Собираем данные формы в объект
     const formData = new FormData(contactForm);
     const data = Object.fromEntries(formData.entries());
+
+    if (!isValidContact(data.contact)) {
+      alert('Пожалуйста, укажите корректный контакт: либо @username в Telegram, либо email.');
+      resetSubmitButton();
+      return; // прерываем отправку
+    }
 
     // Добавляем тип заявки и дату
     data.formType = 'main_application';
