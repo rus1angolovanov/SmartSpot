@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Раздел в разработке</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f5f5; /* Светло-серый фон */
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      opacity: 0;
+      animation: fadeIn 1.2s ease-in-out forwards;
+    }
+
+    p {
+      font-size: 1.2em;
+      color: #666;
+      max-width: 500px;
+    }
+
+    a.back-link {
+      margin-top: 30px;
+      display: inline-block;
+      text-decoration: none;
+      font-size: 1em;
+      color: #007bff;
+      border: 1px solid transparent;
+      padding: 10px 20px;
+      border-radius: 5px;
+      transition: all 0.3s ease;
+    }
+
+    a.back-link:hover {
+      border-color: #007bff;
+      background-color: #e6f0ff;
+    }
+
+    @keyframes fadeIn {
+      to {
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Скоро здесь что-то появится 😊</h1>
+  <p>Этот раздел пока в разработке. Мы уже работаем над ним — загляните позже!</p>
+
+  <a href="/" class="back-link">← На главную</a>
+
+</body>
+</html>
